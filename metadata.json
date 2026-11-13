@@ -1,0 +1,6 @@
+{
+  "name": "Crown & Jade Puzzle Hub",
+  "description": "Mobile-first casual puzzle hub featuring Block Blast (Unlimited Adventure & Classic Endless) and Mahjong Solitaire with procedural solvable levels and Amazon Appstore-safe AdMob integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
