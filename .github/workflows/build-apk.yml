@@ -1,0 +1,55 @@
+name: Build Signed Release APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies and Build Web
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+          npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Unsigned Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Generate Keystore and Sign APK
+        run: |
+          keytool -genkey -v -keystore release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias crownjade -storepass 123456 -keypass 123456 -dname "CN=Ameer Hamza, OU=Dev, O=CrownJade, L=Agra, S=UP, C=IN"
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -n 1)
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
+          $BUILD_TOOLS_DIR/apksigner sign --ks release-key.jks --ks-key-alias crownjade --ks-pass pass:123456 --key-pass pass:123456 --out CrownJade-Signed-Release.apk app-release-aligned.apk
+
+      - name: Upload Signed APK and Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: CrownJade-Amazon-Release
+          path: |
+            CrownJade-Signed-Release.apk
+            release-key.jks
